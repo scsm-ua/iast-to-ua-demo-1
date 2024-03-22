@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>String Replacer</title>
+
+  <style>
+    :root {
+      --color-accent: #895ede;
+      --color-border: #d9d9dd;
+      --color-text: #45435b;
+      --color-outline: #dfd3f6;
+      --border-component: 2px solid var(--color-border);
+    }
+
+    body {
+      background-color: #f9f9fa;
+    }
+    
+    .app {
+      max-width: 980px;
+      margin: 20px auto;
+      font-family: Inter, Roboto, 'Helvetica Neue', 'Arial Nova', 'Nimbus Sans', Arial, sans-serif;
+      padding: 15px;
+      font-weight: normal;
+      color: var(--color-text);
+    }
+
+    .button {
+      box-sizing: border-box;
+      padding: 1em 1em;
+      min-width: 250px;
+      border: none;
+      border-radius: 5px;
+      background-color: var(--color-accent);
+      font: inherit;
+      color: #fff;
+      box-shadow: 0 3px 2px 0 #5d3d9c;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    #replace-button {
+      align-self: center;
+    }
+
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .label {
+      display: flex;
+      flex-direction: column;
+      font-weight: 700;
+      gap: 5px;
+    }
+
+    .textarea {
+      min-height: 150px;
+      border: var(--border-component);
+      border-radius: 5px;
+      padding: 8px;
+      resize: vertical;
+      font: inherit;
+      font-weight: 400;
+    }
+
+    *:focus-visible {
+      border-color: var(--color-accent);
+      outline-color: var(--color-outline);
+      outline-width: 4px;
+      outline-style: solid;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <form id="replace-form" class="form">
+
+      <label class="label">
+        <span class="label__text">Input</span>
+        <textarea class="label__field textarea" id="input">bhajahu̐ re mana śrī-nanda-nandana abhaya-charaṇāravinda re</textarea>
+      </label>
+
+      <label class="label">
+        <span class="label__text">Output</span>
+        <textarea class="label__field textarea" id="output"></textarea>
+      </label>
+
+    </form>
+  </div>
+
+  <script>
+
+
+    const vowels = ["ḷ", "ṛ", "ṝ", "a", "ai", "e", "i", "o", "u", "ā", "ī", "ū"];
+
+    const ya_conditions = [{
+        // На початку слова.
+        after: /^$/,
+    }, {
+        // Після голосної.
+        after: vowels
+    }];
+
+    const dya_conditions = [{
+        after: ["d", "ḍ", "l", "n", "ñ", "ṇ", "ṅ", "s", "ś", "t", "ṭ", "ā̐"]
+    }];
+
+    const rules = [
+        {
+            in: "b",
+            out:                "б"
+        },
+        {
+            in: "bh",
+            out:                "бг"
+        },
+        {
+            in: "c",
+            out:                "ч"
+        },
+        {
+            in: "ch",
+            out:                "чх"
+        },
+        // {
+        //     in: "chh",
+        //     out:                "чх"
+        // },
+        {
+            in: ["d", "ḍ"],
+            out:                "д"
+        },
+        {
+            in: ["dh", "ḍh"],
+            out:                "дг"
+        },
+        {
+            in: "g",
+            out:                "ґ"
+        },
+        {
+            in: "gh",
+            out:                "г"
+        },
+        {
+            in: "h",
+            rules: [{
+                // Custom: Використовуємо Х на початку слова та після голосних
+                out: 'х',
+                conditions: ya_conditions
+            }, {
+                out: "г",
+                default: true
+            }]
+        },
+        {
+            in: "ḥ",
+            out:                "х"
+        },
+        {
+            in: "j",
+            out:                "дж"
+        },
+        {
+            in: "jh",
+            out:                "джг"
+        },
+        {
+            in: "k",
+            out:                "к"
+        },
+        {
+            in: "kh",
+            out:                "кх"
+        },
+        {
+            in: "l",
+            out:                "л"
+        },
+        {
+            in: "m",
+            out:                "м"
+        },
+        // Custom: Спрощене правило для "saṁnyāsin".
+        {
+            in: ["ṃ", "ṁ"],
+            rules: [{
+                out:                "н",
+                conditions: [{
+                    before: ["n"],
+                }]
+            }, {
+                out:                "м",
+                default: true
+            }]
+        },
+        // Custom: Для безпосередньої транслітерації звучання ці правила не використовуємо.
+        // {
+        //     in: ["ṃ", "ṁ"],
+        //     rules: [{
+        //         out:                "м",
+        //         conditions: [{
+        //             after: /^sa$/,
+        //             before: ["b", "bh", "h", "m", "p", "ph", "v"],
+        //         }, {
+        //             // saṃrāj
+        //             after: /^sa$/,
+        //             before: /^rāj$/
+        //         }, {
+        //             // Остання літера.
+        //             before: /^$/
+        //         }]
+        //     }, {
+        //         out:                "н",
+        //         default: true
+        //     }]
+        // },
+        {
+            in: ["n", "ṇ", "ṅ"],
+            out:                "н"
+        },
+        {
+            in: ["ña", "ñā"],
+            out:                "ня"
+        },
+        {
+            in: "ñe",
+            out:                "нє"
+        },
+        {
+            in: ["ñi", "ñī"],
+            out:                "ні"
+        },
+        {
+            in: ["ñu", "ñū"],
+            out:                "ню"
+        },
+        {
+            in: "ñ",
+            out:                "нь"
+        },
+        {
+            in: "p",
+            out:                "п"
+        },
+        {
+            in: "ph",
+            out:                "пх"
+        },
+        {
+            in: "r",
+            out:                "р"
+        },
+        {
+            in: "s",
+            out:                "с"
+        },
+        {
+            in: "ṣ",
+            out:                "ш"
+        },
+        {
+            in: "ś",
+            out:                "ш"
+        },
+        {
+            in: ["ṣi", "ṣī"],
+            out:                "ши"
+        },
+        {
+            in: ["śa", "śā"],
+            out:                "шя"
+        },
+        {
+            in: ["śa̐", "śā̐"],
+            out:                "шян"
+        },
+        {
+            in: "śe",
+            out:                "шє"
+        },
+        {
+            in: ["śi", "śī"],
+            out:                "ші"
+        },
+        {
+            in: ["śu", "śū"],
+            out:                "шю"
+        },
+        {
+            in: ["t", "ṭ"],
+            out:                "т"
+        },
+        {
+            in: ["th", "ṭh"],
+            out:                "тх"
+        },
+        {
+            in: ["v", "w"],
+            out:                "в"
+        },
+        {
+            in: "y",
+            rules: [{
+                out: "й",
+                conditions: [{
+                    // Остання літера.
+                    before: /^$/
+                }]
+            }]
+        },
+        {
+            in: ["ya", "yā"],
+            rules: [{
+                out: "я",
+                conditions: ya_conditions
+            }, {
+                out: "ья",
+                conditions: dya_conditions
+            }, {
+                out: "ʼя",
+                default: true
+            }]
+        },
+        // Custom.
+        {
+            in: ["ya̐", "yā̐"],
+            rules: [{
+                out: "ян",
+                conditions: ya_conditions
+            }, {
+                out: "ьян",
+                conditions: dya_conditions
+            }, {
+                out: "ʼян",
+                default: true
+            }]
+        },
+        {
+            in: "yai",
+            rules: [{
+                out: "яй",
+                conditions: ya_conditions
+            }, {
+                out: "ьяй",
+                conditions: dya_conditions
+            }, {
+                out: "ʼяй",
+                default: true
+            }]
+        },
+        {
+            in: "ye",
+            rules: [{
+                out: "є",
+                conditions: ya_conditions
+            }, {
+                out: "ьє",
+                conditions: dya_conditions
+            }, {
+                out: "ʼє",
+                default: true
+            }]
+        },
+        {
+            in: ["yi", "yī"],
+            rules: [{
+                out: "ї",
+                conditions: ya_conditions
+            }, {
+                out: "ьї",
+                conditions: dya_conditions
+            }, {
+                out: "ʼї",
+                default: true
+            }]
+        },
+        {
+            in: "yo",
+            rules: [{
+                out: "йо",
+                conditions: ya_conditions
+            }, {
+                out: "ьйо",
+                conditions: dya_conditions
+            }, {
+                out: "йо",
+                default: true
+            }]
+        },
+        {
+            in: ["yu", "yū"],
+            rules: [{
+                out: "ю",
+                conditions: ya_conditions
+            }, {
+                out: "ью",
+                conditions: dya_conditions
+            }, {
+                out: "ʼю",
+                default: true
+            }]
+        },
+        {
+            in: ["yya", "yyā"],
+            out:                "йя"
+        },
+        {
+            in: "yyai",
+            out:                "йяй"
+        },
+        {
+            in: "yye",
+            out:                "йє"
+        },
+        {
+            in: ["yyi", "yyī"],
+            out:                "йї"
+        },
+        {
+            in: "yyo",
+            out:                "ййо"
+        },
+        {
+            in: ["yyu", "yyū"],
+            out:                "йю"
+        },
+        {
+            in: "a̐",
+            out:                "ан"
+        },
+        {
+            in: "ā̐",
+            out:                "а̄н"
+        },
+        {
+            in: "ḷ",
+            out:                "ли"
+        },
+        {
+            in: ["ṛ", "ṝ"],
+            out:                "ри"
+        },
+        {
+            in: "a",
+            out:                "а"
+        },
+        {
+            in: "e",
+            out:                "е"
+        },
+        // Custom.
+        {
+            in: "e̐",
+            out:                "ен"
+        },
+        {
+            in: "i",
+            rules: [{
+                out: 'й',
+                conditions: [{
+                    after: ['a']
+                }]
+            }, {
+                out: "і",
+                default: true
+            }]
+        },
+        {
+            in: "i̐",
+            out:                "ін"
+        },
+        {
+            in: "o",
+            out:                "о"
+        },
+        // Custom.
+        {
+            in: "o̐",
+            out:                "он"
+        },
+        {
+            in: ["u", "u̐"], // u̐ - бхаджаху ре мана
+            out:                "у"
+        },
+
+        // Custom.
+        {
+            in: "ā",
+            out:                "а̄"
+        },
+        {
+            in: "ī",
+            out:                "ī"
+        },
+        {
+            in: "ū",
+            out:                "ӯ"
+        },
+
+        // Fix `jna`.
+        {
+            in: ["jñā", "jña"],
+            out:                "ґʼя"
+        },
+        {
+            in: "jño",
+            out:                "ґйо"
+        },
+        {
+            in: "jñe",
+            out:                "ґʼє"
+        },
+    ];
+
+
+    rules.word_exceptions_usage = {};
+    // TODO: check symbols.
+    rules.punctuation = [" ", "-", "–", ",", "’", "\n", "!", "(", ")", "‘", "“", "—", "”", "'", "?", "."];
+
+
+    function punctuation_at(rules, text, i) {
+        return rules.punctuation.indexOf(text.substring(i, i + 1)) > -1;
+    }
+
+    function matchesEnd(word_part_before, condition) {
+        if (word_part_before.length >= condition.length) {
+            return word_part_before.substring(word_part_before.length - condition.length) === condition;
+        }
+        return false;
+    }
+
+    function matchesStart(word_part_after, condition) {
+        if (word_part_after.length >= condition.length) {
+            return word_part_after.substring(0, condition.length) === condition;
+        }
+        return false;
+    }
+
+    function findSubRule(rule, before_letter, after_letter) {
+        var default_rule;
+        var match_rule;
+        for(var j = 0; j < rule.rules.length && !match_rule; j++) {
+            var subrule = rule.rules[j];
+            // subrule.out
+            if (subrule.default) {
+                default_rule = subrule;
+            } else {
+                var condition_match = null;
+                for(var i = 0; i < subrule.conditions.length && !condition_match; i++) {
+                    var condition = subrule.conditions[i];
+                    var condition_match_after = false;
+                    var condition_match_before = false;
+
+                    // Check after.
+                    if (condition.after) {
+                        if (Array.isArray(condition.after)) {
+                            condition_match_after = condition.after.find(after => matchesEnd(before_letter, after));
+                        } else
+                        if (condition.after instanceof RegExp) {
+                            condition_match_after = condition.after.test(before_letter);
+                        } else {
+                            console.error('Wrong rule type "after" in', condition);
+                        }
+                    }
+
+                    // Check before.
+                    if (condition.before) {
+                        if (Array.isArray(condition.before)) {
+                            condition_match_before = condition.before.find(before => matchesStart(after_letter, before));
+                        } else
+                        if (condition.before instanceof RegExp) {
+                            condition_match_before = condition.before.test(after_letter);
+                        } else {
+                            console.error('Wrong rule type "before" in', condition);
+                        }
+                    }
+
+                    // Check.
+                    if (condition.after && condition.before) {
+                        if (condition_match_after && condition_match_before) {
+                            condition_match = true;
+                        }
+                    } else if (condition.after || condition.before) {
+                        if (condition_match_after || condition_match_before) {
+                            condition_match = true;
+                        }
+                    }
+                }
+                if (condition_match) {
+                    match_rule = subrule;
+                }
+            }
+        }
+        if (match_rule) {
+            return match_rule;
+        } else if (default_rule) {
+            return default_rule;
+        }
+    }
+
+    function processWord(rules, word) {
+
+        if (rules.word_exceptions && rules.word_exceptions[word]) {
+            rules.word_exceptions_usage[word]++;
+            word = rules.word_exceptions[word];
+        }
+
+        var word_out = '';
+        for(var i = 0; i < word.length;) {
+            var bit_by_length = [word.substring(i, i + 1)];
+
+            for(var j = 2; j <= rules.MAX_IN_LENGTH; j++) {
+                if (i + j <= word.length) {
+                    bit_by_length[j-1] = word.substring(i, i + j);
+                }
+            }
+
+            var max_in_rule = null;
+            var max_in_rule_length = 0;
+            rules.forEach(function(rule) {
+                rule.in.forEach(function(in_l) {
+                    var text_letter = bit_by_length[in_l.length - 1];
+                    if (in_l === text_letter && max_in_rule_length < in_l.length) {
+                        max_in_rule = rule;
+                        max_in_rule_length = in_l.length;
+                    }
+                });
+            });
+            if (!max_in_rule) {
+                console.error('No rule for', bit_by_length, word)
+            } else {
+                // console.log('rule', i, max_in_rule, max_in_rule_length, bit_by_length)
+                
+
+                if (typeof max_in_rule.out === 'string') {
+                    word_out += max_in_rule.out;
+                } else if (max_in_rule.rules) {
+                    var out_rule = findSubRule(max_in_rule, word.substring(0, i), word.substring(i + max_in_rule_length));
+                    if (!out_rule) {
+                        console.error('No out condition', max_in_rule, word, bit_by_length[max_in_rule_length - 1]);
+                    } else {
+                        word_out += out_rule.out;
+                    }
+                } else {
+                    console.error('Not out and conditions for rule', max_in_rule);
+                }
+            }
+            i += max_in_rule_length || 1;
+        }
+        //console.log('--word', word, word_out)
+        return word_out;
+    }
+
+    var cmin = Number.MAX_VALUE, cmax = Number.MIN_VALUE;
+
+    function checkSymbols(str) {
+        if (str) {
+            for(var i = 0; i < str.length; i++) {
+                var c = str.charCodeAt(i);
+                if (c < cmin) {
+                    cmin = c;
+                }
+                if (c > cmax) {
+                    cmax = c;
+                }
+            }
+        }
+        console.log(cmin, cmax, '----')
+
+        for(var i = cmin; i <= cmax; i ++) {
+            console.log(String.fromCharCode(i));
+        }
+    }
+
+    var prepareRules = function(rules) {
+        rules.MAX_IN_LENGTH = 1;
+
+        // 'in' to array.
+        rules.forEach(function(rule) {
+            if (!Array.isArray(rule.in)) {
+                rule.in = [rule.in];
+            }
+            // checkSymbols(rule.out);
+            // rule.rules && rule.rules.forEach(function(r) {
+                // checkSymbols(r.out);
+            // })
+            rule.in.forEach(function(l) {
+                if (l.length > rules.MAX_IN_LENGTH) {
+                    rules.MAX_IN_LENGTH = l.length;
+                }
+                // console.log('in', l, l.length, MAX_IN_LENGTH)
+            })
+        });
+    };
+
+    prepareRules(rules);
+
+    var processText = function(rules, text) {
+        var word_start = 0;
+        var text_bits = [];
+        for(var i = 0; i < text.length; i++) {
+            if (punctuation_at(rules, text, i)) {
+                if (i - word_start > 0) {
+                    text_bits.push(processWord(rules, text.substring(word_start, i)));
+                }
+                text_bits.push(text.charAt(i));
+                word_start = i + 1;
+            } else if (i === text.length - 1) {
+                if (i + 1 - word_start > 0) {
+                    // Last word.
+                    text_bits.push(processWord(rules, text.substring(word_start, i + 1)));
+                }
+            }
+        }
+        return text_bits.join('');
+    }
+
+    const inputArea = document.querySelector('#input');
+    const outputArea = document.querySelector('#output');
+
+    function convertInput() {
+      const result = processText(rules, inputArea.value);
+      outputArea.value = result;
+    }
+
+    inputArea.addEventListener('keyup', convertInput);
+
+    convertInput();
+
+  </script>
+</body>
+
+</html>
