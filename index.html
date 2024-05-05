@@ -607,7 +607,17 @@
         }
     }
 
-    function processWord(rules, word) {
+    function processWord(rules, word, allow_uppercase) {
+    
+        var firstLetterUppercase = false;
+        
+        if (allow_uppercase) {
+            var first_letter = word.substring(0, 1);
+            if (first_letter !== first_letter.toLowerCase()) {
+                firstLetterUppercase = true;
+                word = word.toLowerCase();
+            }
+        }
 
         if (rules.word_exceptions && rules.word_exceptions[word]) {
             rules.word_exceptions_usage[word]++;
@@ -656,6 +666,12 @@
             }
             i += max_in_rule_length || 1;
         }
+
+        if (firstLetterUppercase) {
+            var first_letter = word_out.substring(0, 1);
+            word_out = first_letter.toUpperCase() + word_out.substring(1);
+        }
+      
         //console.log('--word', word, word_out)
         return word_out;
     }
@@ -704,20 +720,20 @@
 
     prepareRules(rules);
 
-    var processText = function(rules, text) {
+    var processText = function(rules, text, allow_uppercase) {
         var word_start = 0;
         var text_bits = [];
         for(var i = 0; i < text.length; i++) {
             if (punctuation_at(rules, text, i)) {
                 if (i - word_start > 0) {
-                    text_bits.push(processWord(rules, text.substring(word_start, i)));
+                    text_bits.push(processWord(rules, text.substring(word_start, i), allow_uppercase));
                 }
                 text_bits.push(text.charAt(i));
                 word_start = i + 1;
             } else if (i === text.length - 1) {
                 if (i + 1 - word_start > 0) {
                     // Last word.
-                    text_bits.push(processWord(rules, text.substring(word_start, i + 1)));
+                    text_bits.push(processWord(rules, text.substring(word_start, i + 1), allow_uppercase));
                 }
             }
         }
@@ -728,7 +744,7 @@
     const outputArea = document.querySelector('#output');
 
     function convertInput() {
-      const result = processText(rules, inputArea.value);
+      const result = processText(rules, inputArea.value, true);
       outputArea.value = result;
     }
 
